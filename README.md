@@ -1,12 +1,14 @@
 Basic Kubernetes Setup with Terraform and Ansible
 =================================================
 
-Create a basic Kubernetes cluster on plain Linux hosts in the Hetzner cloud.
+Create a basic Kubernetes cluster on plain Linux hosts in the [Hetzner cloud](https://hetzner.cloud).
 
 * [Terraform](https://www.terraform.io) script to set up the hosts.
 * [Ansible](https://www.ansible.com) playbook to install Kubernetes using kubeadm.
 
 This is a stripped down version of [github.com/fstab/diy-kubernetes](https://github.com/fstab/diy-kubernetes). It does not include the persistent volume, the load balancer, and Kubernetes monitoring.
+
+**This repository is not maintained.** It contains a snapshot used in March 2019, but it will not be updated for future Kubernetes versions.
 
 What You Get
 ------------
