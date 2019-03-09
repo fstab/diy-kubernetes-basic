@@ -9,3 +9,4 @@ tinc-host-configs/
 client-certificate/
 .patat-v0.7.2.0-linux-x86_64/
 mount.txt
+ansible.cfg

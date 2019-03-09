@@ -1,3 +1,100 @@
 ---
-- import_tasks: 01-kubeadm-kubelet-kubectl.yml
-- import_tasks: 02-cifs-flexvolume-plugin.yml
+
+# "Even though kubeadm ships in the Kubernetes repositories, it’s important to install kubeadm manually."
+# See https://kubernetes.io/docs/tasks/administer-cluster/upgrade-downgrade/kubeadm-upgrade-1-9/
+
+- name: Install socat
+  apt:
+    name: socat
+
+- name: Remove swapfile from /etc/fstab
+  mount:
+    name: swap
+    fstype: swap
+    state: absent
+
+- name: Disable swap
+  command: swapoff -a
+  when: ansible_swaptotal_mb > 0
+
+- name: Create installation directory for CNI plugins
+  file:
+    path: /opt/cni/bin
+    state: directory
+
+- name: Download the CNI plugins
+  get_url:
+    url: "https://github.com/containernetworking/plugins/releases/download/{{ cni_version }}/cni-plugins-amd64-{{ cni_version }}.tgz"
+    dest: /opt/cni
+    checksum: "{{ cni_checksum }}"
+    mode: 0644
+
+- name: Install the CNI plugins
+  unarchive:
+    src: "/opt/cni/cni-plugins-amd64-{{ cni_version }}.tgz"
+    dest: /opt/cni/bin
+    remote_src: yes
+
+- name: Download the CRI tools
+  get_url:
+    url: "https://github.com/kubernetes-sigs/cri-tools/releases/download/{{ cri_tools_version }}/crictl-{{ cri_tools_version }}-linux-amd64.tar.gz"
+    dest: /opt/
+    checksum: "{{ cri_tools_checksum }}"
+    mode: 0644
+
+- name: Install the CRI tools
+  unarchive:
+    src: "/opt/crictl-{{ cri_tools_version }}-linux-amd64.tar.gz"
+    dest: /usr/bin/
+    remote_src: yes
+
+- name: Download kubelet, kubectl, kubeadm
+  get_url:
+    url: "https://storage.googleapis.com/kubernetes-release/release/{{ kubernetes_version }}/bin/linux/amd64/{{ item.name }}"
+    dest: /usr/bin
+    checksum: "{{ item.checksum }}"
+    mode: 0755
+  loop:
+    - { name: 'kubelet', checksum: '{{ kubelet_checksum }}' }
+    - { name: 'kubectl', checksum: '{{ kubectl_checksum }}' }
+    - { name: 'kubeadm', checksum: '{{ kubeadm_checksum }}' }
+
+- name: kubectl bash completion
+  blockinfile:
+    path: /root/.bashrc
+    block: |
+      if which kubectl > /dev/null ; then
+          source <(kubectl completion bash)
+      fi
+
+- name: Download kubelet.service
+  get_url:
+    url: "https://raw.githubusercontent.com/kubernetes/kubernetes/{{ kubernetes_version }}/build/debs/kubelet.service"
+    dest: /lib/systemd/system/
+    checksum: '{{ kubelet_service_checksum }}'
+    mode: 0644
+  notify:
+    - enable, reload, and start kubelet
+
+- name: Create kubelet.service.d directory
+  file:
+    path: /etc/systemd/system/kubelet.service.d
+    state: directory
+
+# TODO: kubelet command line arguments set in 10-kubeadm.conf are deprecated. Should create a kubernetes config file instead.
+- name: Download kubelet.service conf
+  get_url:
+    url: "https://raw.githubusercontent.com/kubernetes/kubernetes/{{ kubernetes_version }}/build/debs/10-kubeadm.conf"
+    dest: /etc/systemd/system/kubelet.service.d
+    checksum: '{{ kubelet_service_conf_checksum }}'
+    mode: 0644
+  notify:
+    - enable, reload, and start kubelet
+
+# /etc/default/kubelet is sourced in /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+- name: Create custom kubelet config in /etc/default/kubelet
+  template:
+    src: "kubelet.j2"
+    dest: /etc/default/kubelet
+  notify:
+    - enable, reload, and start kubelet

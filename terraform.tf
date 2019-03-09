@@ -50,17 +50,6 @@ resource "hcloud_server" "node" {
   }
 }
 
-resource "hcloud_server" "loadbalancer" {
-  name        = "load-balancer"
-  image       = "ubuntu-18.04"
-  server_type = "cx11"
-  datacenter  = "nbg1-dc3"
-  ssh_keys    = ["${var.ssh_key_name}"]
-  provisioner "remote-exec" {
-    script = "install-python.sh"
-  }
-}
-
 # ====================================================================
 # Ansible inventory
 # ====================================================================
@@ -81,12 +70,11 @@ resource "hcloud_server" "loadbalancer" {
 # -------------------------------------------------------------------
 
 resource "null_resource" "ansible-provision" {
-  depends_on = ["hcloud_server.master", "hcloud_server.node", "hcloud_server.loadbalancer"]
+  depends_on = ["hcloud_server.master", "hcloud_server.node"]
 
   triggers = {
     kube_master_id = "${hcloud_server.master.id}"
     kube_node_ids = "${join(", ", hcloud_server.node.*.id)}"
-    load_balancer_id = "${hcloud_server.loadbalancer.id}"
   }
 
   provisioner "local-exec" {
@@ -111,13 +99,5 @@ resource "null_resource" "ansible-provision" {
 
   provisioner "local-exec" {
     command = "echo \"\n[kube-cluster:children]\nkube-masters\nkube-nodes\" >> inventory"
-  }
-
-  provisioner "local-exec" {
-    command = "echo \"\n[load-balancers]\" >> inventory"
-  }
-
-  provisioner "local-exec" {
-    command = "echo \"${format("%s vpn_ip=172.16.0.101 ansible_host=%s ansible_user=root", hcloud_server.loadbalancer.name, hcloud_server.loadbalancer.ipv4_address)}\" >> inventory"
   }
 }

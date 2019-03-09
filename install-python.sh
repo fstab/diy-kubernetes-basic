@@ -10,6 +10,8 @@ declare -ri max_retries=12
 
 declare -i retry_count=0
 
+export DEBIAN_FRONTEND=noninteractive
+
 while ! ( apt-get update -q && apt-get upgrade -q -y ) ; do
     sleep $sleep_interval_seconds
     (( retry_count += 1 ))
