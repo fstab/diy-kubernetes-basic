@@ -1,7 +1,7 @@
 Basic Kubernetes Setup with Terraform and Ansible
 =================================================
 
-Create a basic Kubernetes cluster on plain Linux hosts in the [Hetzner cloud](https://hetzner.cloud).
+Create a basic Kubernetes cluster on Linux root servers in the [Hetzner cloud](https://hetzner.cloud).
 
 * [Terraform](https://www.terraform.io) script to set up the hosts.
 * [Ansible](https://www.ansible.com) playbook to install Kubernetes using kubeadm.
@@ -14,8 +14,8 @@ What You Get
 ------------
 
 * Three hosts: `kube-master`, `kube-node-1`, `kube-node-2`.
-* [Tinc VPN](https://www.tinc-vpn.org/) between the hosts. Kubernetes traffic will not be directly routed through the hosts' public network interfaces.
-* `kubectl` installed and ready to use on `kube-master`.
+* [Tinc VPN](https://www.tinc-vpn.org/) between the hosts. Kubernetes will use the VPN.
+* `kubectl` ready to use on `kube-master`.
 
 What You Need
 -------------
