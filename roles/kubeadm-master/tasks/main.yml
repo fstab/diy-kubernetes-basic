@@ -49,14 +49,25 @@
 
 - name: download kube-flannel.yml
   get_url:
-    url: "https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml"
+    url: "https://raw.githubusercontent.com/coreos/flannel/{{ kube_flannel_version}}/Documentation/kube-flannel.yml"
     dest: /root
     checksum: "{{ kube_flannel_checksum }}"
+
+# The following regex works because we know the exact sha1 checksum of kube-flannel.yml
+# so it does not need to be generic but only work for exactly that file.
+# We don't use lineinfile because we want to replace multiple occurrences.
+# As a result you should see in the logs of the flannel containers that flanneld binds
+# to the vpn interface and not to eth0
+- name: set flannel default network interface
+  replace: >
+      dest=/root/kube-flannel.yml
+      regexp="^(        - --kube-subnet-mgr\n)(?!        - --iface=vpn0)"
+      replace="\1        - --iface=vpn0\n"
 
 - name: install flannel
   shell: kubectl apply -f /root/kube-flannel.yml
   args:
-    creates: /etc/cni/net.d/10-flannel.conflist
+    creates: /etc/cni/net.d/10-flannel.conf
 
 - name: Create a bootstrap token
   shell: kubeadm token create --description "ansible token created on $(date)" --print-join-command

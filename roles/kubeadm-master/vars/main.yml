@@ -1,2 +1,3 @@
 ---
-kube_flannel_checksum: 'sha1:9e1ffe51cc97c3ab0cdf849618224a1bbfbe14e9'
+kube_flannel_version: v0.11.0
+kube_flannel_checksum: 'sha1:6d05086639a4fd2d42113021ea53b4623ecca8d6'
